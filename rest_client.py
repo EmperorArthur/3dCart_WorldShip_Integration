@@ -1,7 +1,6 @@
 import urllib
 import urllib2
 import json
-from pprint import pprint
 
 def rest_get(url,parameters,headers):
     query = urllib.urlencode(parameters)
@@ -29,4 +28,3 @@ class Rest_3Dcart:
         url = self.rest_base + 'Orders'
         parameters = {'invoicenumber': invoice_number}
         return rest_get(url,parameters,self.headers)
-
