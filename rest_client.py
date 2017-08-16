@@ -3,8 +3,6 @@ import urllib2
 import json
 from pprint import pprint
 
-PRIVATE_KEY = ''
-
 def rest_get(url,parameters,headers):
     query = urllib.urlencode(parameters)
     full_url = url + '?' + query
@@ -14,16 +12,21 @@ def rest_get(url,parameters,headers):
     data = response.read()
     return json.loads(data)
 
-def get_order_by_invoice_number(invoice_number,site_url,site_token):
+class Rest_3Dcart:
+    """A class to interact with the 3dcart REST API"""
     rest_base = 'https://apirest.3dcart.com/3dCartWebAPI/v1/'
-    url = rest_base + 'Orders'
-    headers = {
+
+    def __init__(self, site_url, site_token,private_key):
+        self.headers = {
         'Content-Type': 'application/json;charset=UTF-8',
         'Accept': 'application/json',
         'SecureUrl': site_url,
-        'PrivateKey': PRIVATE_KEY,
+        'PrivateKey': private_key,
         'Token':     site_token
         }
-    parameters = {'invoicenumber': invoice_number}
-    return rest_get(url,parameters,headers)
+
+    def get_order_by_invoice_number(self,invoice_number):
+        url = self.rest_base + 'Orders'
+        parameters = {'invoicenumber': invoice_number}
+        return rest_get(url,parameters,self.headers)
 
