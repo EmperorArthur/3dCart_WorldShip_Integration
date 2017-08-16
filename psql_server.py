@@ -8,6 +8,7 @@
 #   enter any password
 
 import SocketServer
+import socket
 import struct
 import logging
 
@@ -115,38 +116,49 @@ def Parse_Query(data):
 
 class Psql_server(SocketServer.BaseRequestHandler):
     def handle(self):
-        peer_name=self.request.getpeername()
-        server_logger.info("Connection established from {0}:{1}".format(peer_name[0],peer_name[1]))
+        try:
+            peer_name=self.request.getpeername()
+            server_logger.info("Connection established from {0}:{1}".format(peer_name[0],peer_name[1]))
 
-        #Handle SSL (Don't do SSL)
-        data = self.get_data()
-        if(Is_SSLRequest(data)):
-            self.send_data("N")
+            #Handle SSL (Don't do SSL)
             data = self.get_data()
+            if(Is_SSLRequest(data)):
+                self.send_data("N")
+                data = self.get_data()
 
-        server_logger.info( "Startup Message: "+ repr(Parse_StartupMessage(data)) )
+            server_logger.info( "Startup Message: "+ repr(Parse_StartupMessage(data)) )
 
-        #Handle Authentication
-        self.send_data(AuthenticationCleartextPassword)
-        server_logger.info("Password: {}".format(Parse_PasswordMessage(self.get_data())))
-        self.send_data(AuthenticationOK)
-
-        self.send_data(ReadyForQuery)
-        ###End Startup Code
-
-        #As long as querys come, continue answering them
-        while(True):
-            query = Parse_Query(self.get_data());
-            if(isinstance(query,str)):
-                query_type = query.split(' ')[0].strip(';').upper()
-                server_logger.info( "Recieved ({}) Query: {}".format(repr(query_type),repr(query)) )
-                if(query_type == "SELECT"):
-                    self.handle_select()
-                else:
-                    self.send_data(CommandComplete(query_type+" 0"))
-                    self.send_data(ReadyForQuery)
+            #Handle Authentication
+            self.send_data(AuthenticationCleartextPassword)
+            data = self.get_data()
+            if(data):
+                server_logger.info("Password: {}".format(Parse_PasswordMessage(data)))
             else:
+                server_logger.info("No Password recieved.  Closing Connection.")
                 return
+            self.send_data(AuthenticationOK)
+
+            self.send_data(ReadyForQuery)
+            server_logger.debug("Startup Completed")
+            ###End Startup Code
+
+            #As long as querys come, continue answering them
+            data = self.get_data()
+            while(data):
+                query = Parse_Query(data);
+                if(isinstance(query,str)):
+                    query_type = query.split(' ')[0].strip(';').upper()
+                    server_logger.info( "Recieved ({}) Query: {}".format(repr(query_type),repr(query)) )
+                    if(query_type == "SELECT"):
+                        self.handle_select()
+                    else:
+                        self.send_data(CommandComplete(query_type+" 0"))
+                        self.send_data(ReadyForQuery)
+                else:
+                    return
+                data = self.get_data()
+        except socket.error as e:
+            server_logger.info("Client closed connection.")
 
     def handle_select(self):
         dicts = [{'abc':1, 'def':2},
