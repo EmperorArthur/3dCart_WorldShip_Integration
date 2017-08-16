@@ -1,10 +1,14 @@
 import urllib
 import urllib2
 import json
+import logging
+
+rest_logger = logging.getLogger('rest_client')
 
 def rest_get(url,parameters,headers):
     query = urllib.urlencode(parameters)
     full_url = url + '?' + query
+    rest_logger.debug( "Getting data from: {}".format(full_url) )
 
     req = urllib2.Request(full_url, None, headers)
     response = urllib2.urlopen(req)
