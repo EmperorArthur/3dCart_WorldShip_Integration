@@ -1,11 +1,11 @@
 #!/bin/python
 
-#A basic python implementation of a Postgresql server
+"""
+A basic python implementation of a Postgresql server
 
-#Usage:
-#   Start this script
-#   ./psql -h <server_ip> -p 5432
-#   enter any password
+To test, use `psql -h <server_ip> -p 5432` and enter any password at the prompt.
+By default, "select;" returns a basic response table, but everything else just responds with a succeeded message.
+"""
 
 import SocketServer
 import socket
@@ -147,23 +147,22 @@ class Psql_server(SocketServer.BaseRequestHandler):
             while(data):
                 query = Parse_Query(data);
                 if(isinstance(query,str)):
-                    query_type = query.split(' ')[0].strip(';').upper()
-                    server_logger.info( "Recieved ({}) Query: {}".format(repr(query_type),repr(query)) )
-                    if(query_type == "SELECT"):
-                        self.handle_select()
-                    else:
-                        self.send_data(CommandComplete(query_type+" 0"))
-                        self.send_data(ReadyForQuery)
+                    server_logger.info( "Recieved Query: {}".format(repr(query)) )
+                    self.handle_query(query);
                 else:
                     return
                 data = self.get_data()
         except socket.error as e:
             server_logger.info("Client closed connection.")
 
-    def handle_select(self):
-        dicts = [{'abc':1, 'def':2},
-                 {'abc':3, 'def':4}]
-        self.select_response(dicts)
+    def handle_query(self,query):
+        query_type = query.split(' ')[0].strip(';').upper()
+        if(query_type == "SELECT"):
+            dicts = [{'abc':1, 'def':2},{'abc':3, 'def':4}]
+            self.select_response(dicts)
+        else:
+            self.send_data(CommandComplete(query_type+" 0"))
+            self.send_data(ReadyForQuery)
 
     def select_response(self,response_dicts):
         """
