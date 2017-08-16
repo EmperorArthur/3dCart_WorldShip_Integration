@@ -163,13 +163,22 @@ class Psql_server(SocketServer.BaseRequestHandler):
     def handle_select(self):
         dicts = [{'abc':1, 'def':2},
                  {'abc':3, 'def':4}]
-        keys = dicts[0].keys()
+        self.select_response(dicts)
+
+    def select_response(self,response_dicts):
+        """
+        Provides a response to SELECT commands.
+        Expects all dicts to have the same keys
+        The field names are taken from the keys of the first dict.
+        Assumes dict.keys() and dict.values() returns items in the same order
+        """
+        keys = response_dicts[0].keys()
 
         self.send_data(RowDescription_text(keys))
-        for row in dicts:
+        for row in response_dicts:
             self.send_data(DataRow_text(row.values()))
 
-        self.send_data(CommandComplete("SELECT {}".format(len(dicts))))
+        self.send_data(CommandComplete("SELECT {}".format(len(response_dicts))))
         self.send_data(ReadyForQuery)
 
     def get_data(self):
