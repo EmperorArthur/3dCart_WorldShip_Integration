@@ -3,6 +3,8 @@
 """
 A basic python implementation of a Postgresql server
 
+Subclass psql_server, and re-define handle_query
+
 To test, use `psql -h <server_ip> -p 5432` and enter any password at the prompt.
 By default, "select;" returns a basic response table, but everything else just responds with a succeeded message.
 """
@@ -13,8 +15,6 @@ import struct
 import logging
 
 server_logger = logging.getLogger('psql_server')
-logging.basicConfig(level=logging.INFO)
-#logging.basicConfig(level=logging.DEBUG)
 
 ###############################################################
 # Data structs, checkers, and parsers
@@ -114,7 +114,7 @@ def Parse_Query(data):
 
 ###############################################################
 
-class Psql_server(SocketServer.BaseRequestHandler):
+class psql_server(SocketServer.BaseRequestHandler):
     def handle(self):
         try:
             peer_name=self.request.getpeername()
@@ -192,7 +192,9 @@ class Psql_server(SocketServer.BaseRequestHandler):
         return self.request.sendall(data)
 
 if __name__ == "__main__":
-    server = SocketServer.TCPServer(("0.0.0.0", 5432), Psql_server)
+    logging.basicConfig(level=logging.INFO)
+    #logging.basicConfig(level=logging.DEBUG)
+    server = SocketServer.TCPServer(("0.0.0.0", 5432), psql_server)
     try:
         server.serve_forever()
     except:
