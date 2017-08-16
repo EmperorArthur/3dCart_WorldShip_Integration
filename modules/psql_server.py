@@ -36,7 +36,7 @@ def Text_field(field_name):
     datatypesize = -1   #Negatives mean variable size
     typemodifier = -1   #This is based on datatypeid, and I have no idea what I'm doing
     format_code = 0     #0 for text, and 1 for binary
-    return field_name + '\x00' + struct.pack("!ihihih", tableid, columnid, datatypeid, datatypesize, typemodifier, format_code)
+    return str(field_name) + '\x00' + struct.pack("!ihihih", tableid, columnid, datatypeid, datatypesize, typemodifier, format_code)
 
 #Cheat and say all fields are of type 'text'
 def RowDescription_text(field_names):
@@ -169,13 +169,15 @@ class psql_server(SocketServer.BaseRequestHandler):
         Provides a response to SELECT commands.
         Expects all dicts to have the same keys
         The field names are taken from the keys of the first dict.
-        Assumes dict.keys() and dict.values() returns items in the same order
         """
         keys = response_dicts[0].keys()
 
         self.send_data(RowDescription_text(keys))
-        for row in response_dicts:
-            self.send_data(DataRow_text(row.values()))
+        for a_dict in response_dicts:
+            row = []
+            for key in keys:
+                row.append(a_dict[key])
+            self.send_data(DataRow_text(row))
 
         self.send_data(CommandComplete("SELECT {}".format(len(response_dicts))))
         self.send_data(ReadyForQuery)
